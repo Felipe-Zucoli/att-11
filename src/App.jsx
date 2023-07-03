@@ -1,66 +1,51 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
-import axios from 'axios';
 
-// Criação do contexto
-const PokemonContext = createContext();
+import { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import './App.css';
+import { List } from './components';
+import { favoritesActions } from './Store/favorites/';
 
-const PokemonList = () => {
-  const [pokemonList, setPokemonList] = useState([]);
-  const [pokemonDetails, setPokemonDetails] = useState([]);
+function App() {
+  const dispatch = useDispatch();
+  const [items, setItems] = useState([]);
+
+  const loadDetails = (items) => {
+    const promises = items.map((item) => {
+      return fetch(item.url).then((response) => response.json())
+    });
+    Promise.all(promises)
+      .then((data) => {
+        setItems(data);
+      });
+  }
 
   useEffect(() => {
-    const fetchPokemonList = async () => {
-      try {
-        const response = await axios.get('https://pokeapi.co/api/v2/pokemon?limit=20');
-        const results = response.data.results;
+    // Inicialização
+    const localData = localStorage.getItem('react-redux');
+    if (localData) {
+        const parsed = JSON.parse(localData);
+        const { favorites } = parsed;
+        dispatch(favoritesActions.init(favorites));
+    }
 
-        const pokemonDetails = await Promise.all(results.map(async (pokemon) => {
-          const pokemonResponse = await axios.get(pokemon.url);
-          return {
-            name: pokemon.name,
-            image: pokemonResponse.data.sprites.front_default,
-          };
-        }));
-
-        setPokemonList(pokemonDetails);
-      } catch (error) {
-        console.error('Error fetching Pokemon list:', error);
-      }
-    };
-
-    fetchPokemonList();
-  }, []);
-
-  return (
-    <div>
-      <h1>Pokémon List</h1>
-      <PokemonContext.Provider value={pokemonDetails}>
-        <PokemonDetails />
-      </PokemonContext.Provider>
-      {pokemonList.map((pokemon) => (
-        <div key={pokemon.name}>
-          <h2>{pokemon.name}</h2>
-          <img src={pokemon.image} alt={pokemon.name} />
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const PokemonDetails = () => {
-  const pokemonDetails = useContext(PokemonContext);
+    fetch('https://pokeapi.co/api/v2/pokemon?limit=20')
+      .then((response) => {
+          return response.json();
+      })
+      .then((data) => {
+        const { results } = data;
+        loadDetails(results);
+      })
+      .catch(() => {
+        console.error('Error');
+      });
+  }, [dispatch]);
 
   return (
     <div>
-      <h1>Pokémon Details</h1>
-      {pokemonDetails.map((pokemon) => (
-        <div key={pokemon.name}>
-          <h2>{pokemon.name}</h2>
-          <img src={pokemon.image} alt={pokemon.name} />
-        </div>
-      ))}
+      <List items={items} />
     </div>
   );
-};
+}
 
-export default PokemonList;
+export default App;
