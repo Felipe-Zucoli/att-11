@@ -22,5 +22,3 @@ const itemsSlice = createSlice({
 
 export const actions = itemsSlice.actions;
 export const reducer = itemsSlice.reducer;
-
-export default itemsSlice;

@@ -1,13 +1,16 @@
 
+import { useCallback } from 'react';
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import './App.css';
 import { List } from './components';
-import { favoritesActions } from './Store/favorites/';
+import { favoritesActions } from './Store/favorites';
 
 function App() {
   const dispatch = useDispatch();
   const [items, setItems] = useState([]);
+
+  const favorites = useSelector(({ favorites }) => favorites);
 
   const loadDetails = (items) => {
     const promises = items.map((item) => {
@@ -41,9 +44,22 @@ function App() {
       });
   }, [dispatch]);
 
+  const handleAddItem = useCallback((item) => {
+    dispatch(favoritesActions.add(item));
+  }, [dispatch]);
+
+  const handleRemoveItem = useCallback((item) => {
+    dispatch(favoritesActions.remove(item));
+  }, [dispatch]);
+
   return (
     <div>
-      <List items={items} />
+      <List 
+        favorites={favorites}
+        items={items}
+        onAddItem={handleAddItem}
+        onRemoveItem={handleRemoveItem}
+      />
     </div>
   );
 }
